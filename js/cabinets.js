@@ -82,9 +82,10 @@
     function part(g,x,y,z,rotation) {
       var p=new THREE.Group();p.position.set(x,y,z);p.rotation.y=rotation||0;g.add(p);return p;
     }
-    function carcass(g,w,h,d,material) {
+    function carcass(g,w,h,d,material,openTop) {
       var t=.018;
-      box(g,0,0,0,w,t,d,material);box(g,0,h-t,0,w,t,d,material);
+      box(g,0,0,0,w,t,d,material);
+      if(!openTop) box(g,0,h-t,0,w,t,d,material);
       box(g,0,t,0,t,h-2*t,d,material);box(g,w-t,t,0,t,h-2*t,d,material);
       box(g,t,t,0,w-2*t,h-2*t,.012,M.inner);
     }
@@ -195,19 +196,79 @@
     for(var dr=0;dr<3;dr++) face(drawers,0,dr*.223,.34,.218,.40,M.white,true);
     box(dresser,.055,.62,.012,.55,.018,.36,M.oak);
 
-    var vanity=assembly('washbasin-cabinet','洗手区地柜','客餐厅',5.943,.17,2.885,-Math.PI/2);
-    carcass(vanity,.66,.63,.42,M.white);
-    face(vanity,0,.015,.33,.595,.42,M.white,false);face(vanity,.33,.015,.33,.595,.42,M.white,false);
-    box(vanity,-.006,.63,-.003,.672,.028,.445,M.paleCounter);
-    var vanityUpper=assembly('washbasin-upper','洗手区吊柜','客餐厅',5.943,2.035,2.885,-Math.PI/2);
-    upper(vanityUpper,.66,.57,.27);
+    // Backed by the south wall: cabinet fronts face north into the dining area.
+    var vanity=assembly('washbasin-cabinet','洗漱台与镜子','客餐厅',5.946,.27,3.545,Math.PI);
+    carcass(vanity,.67,.55,.50,M.white,true);
+    face(vanity,0,.012,.335,.528,.50,M.white,false);face(vanity,.335,.012,.335,.528,.50,M.white,false);
+    box(vanity,.018,.34,.012,.634,.018,.46,M.inner);
+    box(vanity,.018,.536,.482,.634,.012,.015,M.gap);
+    var ceramic=mat('洗漱台白色陶瓷',0xf0f1ee,.20);
+    var chrome=mat('洗漱台镀铬五金',0xd1d5d7,.18);chrome.metalness=1;chrome.envMap=steelEnvironment.texture;
+    // Rounded rings form a recessed bowl rather than covering it with a flat top.
+    function roundedRing(w,d,r,cx,cz) {
+      var points=[],corners=[[w/2-r,d/2-r],[-w/2+r,d/2-r],[-w/2+r,-d/2+r],[w/2-r,-d/2+r]];
+      corners.forEach(function(c,i){for(var j=0;j<=8;j++){
+        var a=(i+j/8)*Math.PI/2;points.push([cx+c[0]+r*Math.cos(a),cz+c[1]+r*Math.sin(a)]);
+      }});return points;
+    }
+    var basinRings=[
+      {w:.67,d:.52,r:.035,y:.60,z:.26},
+      {w:.46,d:.31,r:.055,y:.60,z:.30},
+      {w:.29,d:.17,r:.05,y:.445,z:.30}
+    ],positions=[],indices=[];
+    basinRings.forEach(function(r){roundedRing(r.w,r.d,r.r,.335,r.z).forEach(function(p){positions.push(p[0],r.y,p[1]);});});
+    var ringSize=positions.length/9;
+    for(var br=0;br<2;br++) for(var bi=0;bi<ringSize;bi++) {
+      var a=br*ringSize+bi,b=br*ringSize+(bi+1)%ringSize,c=a+ringSize,d=b+ringSize;
+      indices.push(a,c,b,b,c,d);
+    }
+    var center=positions.length/3;positions.push(.335,.445,.30);
+    for(var bf=0;bf<ringSize;bf++) indices.push(2*ringSize+bf,center,2*ringSize+(bf+1)%ringSize);
+    var basinGeometry=new THREE.BufferGeometry();basinGeometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    basinGeometry.setIndex(indices);basinGeometry.computeVertexNormals();
+    var basin=new THREE.Mesh(basinGeometry,ceramic);basin.name='washbasin-bowl';
+    basin.castShadow=true;basin.receiveShadow=true;vanity.add(basin);
+    box(vanity,.018,.565,.502,.634,.035,.018,ceramic);
+    box(vanity,0,.565,.035,.018,.035,.467,ceramic);box(vanity,.652,.565,.035,.018,.035,.467,ceramic);
+    box(vanity,0,.60,0,.67,.023,.018,ceramic);
+    function cylinder(g,x,y,z,r,h,material) {
+      var m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,24),material);m.position.set(x,y+h/2,z);
+      m.castShadow=true;m.receiveShadow=true;g.add(m);return m;
+    }
+    cylinder(vanity,.335,.446,.30,.022,.003,chrome).name='washbasin-drain';
+    var tap=new THREE.Group();tap.name='washbasin-faucet';vanity.add(tap);
+    cylinder(tap,.335,.60,.065,.023,.145,chrome);
+    box(tap,.315,.71,.065,.04,.026,.115,chrome);
+    box(tap,.318,.754,.044,.034,.012,.075,chrome);
+    var vanityUpper=assembly('washbasin-upper','洗手区顶柜','客餐厅',5.946,2.12,3.545,Math.PI);
+    upper(vanityUpper,.67,.55,.64);
+
+    function mirrorOutline(w,h,r) {
+      var shape=new THREE.Shape();roundedRing(w,h,r,0,0).forEach(function(p,i){if(i)shape.lineTo(p[0],p[1]);else shape.moveTo(p[0],p[1]);});
+      shape.closePath();return new THREE.ShapeGeometry(shape);
+    }
+    var mirrorTarget=new THREE.WebGLCubeRenderTarget(128,{generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter});
+    mirrorTarget.texture.encoding=THREE.sRGBEncoding;
+    var mirrorCamera=new THREE.CubeCamera(.025,40,mirrorTarget);
+    var mirrorGlow=new THREE.Mesh(mirrorOutline(.626,.746,.048),new THREE.MeshBasicMaterial({color:0xc6e5ed}));
+    mirrorGlow.position.set(.335,1.29,.024);vanity.add(mirrorGlow);
+    var mirror=new THREE.Mesh(mirrorOutline(.61,.73,.044),new THREE.MeshBasicMaterial({color:0xdce6e9,envMap:mirrorTarget.texture,combine:THREE.MixOperation,reflectivity:.94}));
+    mirror.name='washbasin-mirror';mirror.position.set(.335,1.29,.028);vanity.add(mirror);
+    // Capture the room when its geometry changes; camera orbit reuses the cubemap.
+    function refreshMirror(scene) {
+      if(!root.visible) return;
+      scene.updateMatrixWorld(true);mirror.getWorldPosition(mirrorCamera.position);
+      mirrorCamera.position.add(new THREE.Vector3(0,0,.03).transformDirection(mirror.matrixWorld).multiplyScalar(.03));
+      mirror.visible=false;mirrorGlow.visible=false;
+      try {mirrorCamera.update(renderer,scene);} finally {mirror.visible=true;mirrorGlow.visible=true;}
+    }
 
     root.updateMatrixWorld(true);
     root.children.forEach(function(g) {
       var b=new THREE.Box3().setFromObject(g);
       g.userData.bounds={min:b.min.toArray(),max:b.max.toArray()};
     });
-    return {root:root};
+    return {root:root,refreshMirror:refreshMirror};
   }
   global.CABINETS={build:build};
 })(window);

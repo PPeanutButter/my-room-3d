@@ -5,19 +5,21 @@
 (function () {
   'use strict';
   var H = 2.70, CX = 4.72, CZ = 4.515;
-  var scene, camera, renderer, shell, joinery, cabinets, fullWalls = true, showLabels = true, doorsOpen = true;
+  var scene, camera, renderer, shell, joinery, cabinets, furniture, fullWalls = true, showLabels = true, doorsOpen = true;
   var labelItems = [], tween = null, frame = 0;
   var canvas = document.getElementById('stage');
   var mobile = function () { return window.innerWidth <= 720; };
-  var orbit = { x:0, z:0, y:0.45, theta:-0.32, phi:0.55, span:13.5 };
+  var orbit = { x:0, z:0, y:0.45, theta:-0.32, phi:0.55, span:13.5, distance:28 };
   var views = {
     all: { x:4.72, z:4.515, y:0.45, theta:-0.32, phi:0.55, span:13.5 },
     top: { x:4.72, z:4.515, y:0, theta:0, phi:0.001, span:11.4 },
     living: { x:3.55, z:4.8, y:0.25, theta:-0.28, phi:0.43, span:8.1 },
+    dining: { x:4.12, z:1.8, y:0.35, theta:.35, phi:.65, span:4.5 },
     kitchen: { x:7.52, z:1.1, y:0.4, theta:-0.18, phi:0.5, span:5.3 },
     master: { x:6.55, z:5.55, y:0.3, theta:-0.3, phi:0.5, span:6.2 },
     bed2: { x:1.55, z:1.9, y:0.3, theta:-0.15, phi:0.45, span:5.9 },
     bath: { x:7.48, z:2.65, y:0.25, theta:-0.15, phi:0.35, span:5.2 },
+    washbasin: { x:5.61, z:3.30, y:1.3, theta:Math.PI, phi:1.03, span:2.7, distance:3 },
     balcony: { x:3.39, z:8.3, y:0.25, theta:-0.25, phi:0.55, span:5.6 }
   };
   // Dimensions explicitly printed on the plan drive the principal axes.
@@ -67,6 +69,8 @@
     { axis:'x', a:6.08,b:9.2,p:1.765,t:.12,holes:[{a:7.92,b:8.73,sill:0,top:2.1}] },
     { axis:'z', a:1.885,b:3.44,p:7.655,t:.24,holes:[{a:2.42,b:3.2,sill:1.05,top:2.15,window:true,id:'bath-window',frost:true}] },
     { axis:'x', a:5.14,b:6.08,p:3.56,t:.12 },
+    // Washstand alcove opens north toward the dining area, beside the bathroom door.
+    { axis:'z', a:2.89,b:3.56,p:5.14,t:.12,id:'washbasin-partition' },
     { axis:'x', a:6.08,b:9.44,p:3.44,t:.24,holes:[{a:8.03,b:9.13,sill:.85,top:2.25,window:true,id:'service-window',screenSide:-1}] },
     { axis:'z', a:3.68,b:7.69,p:1.4,t:.24 },
     { axis:'z', a:3.68,b:7.45,p:5.14,t:.12,holes:[{a:3.68,b:4.57,sill:0,top:2.15,id:'master-door',door:'wood',swing:1.3}] },
@@ -79,6 +83,7 @@
     { axis:'x', a:1.64,b:5.14,p:8.91,t:.12,balcony:true,holes:[{a:1.82,b:4.98,sill:.082,top:2.3,window:true,id:'balcony-south-window',panes:4,screenSide:-1}] }
   ];
   function wallFinish(x,z) {
+    if(x>5.255&&x<5.985&&z>2.89&&z<3.59) return mats.wallTile;
     var tiled=rooms.some(function(r) {
       if(!r.tiledWalls) return false;
       var a=r.rect;return x>a[0]-.025&&x<a[2]+.025&&z>a[1]-.025&&z<a[3]+.025;
@@ -163,9 +168,11 @@
       document.getElementById('labels').appendChild(el);
       labelItems.push({el:el,point:new THREE.Vector3(r.at[0]-CX,.06,r.at[1]-CZ)});
     });
+    slab(floors,rect(5.26,2.89,5.96,3.56),.001,.025,mats.bath).name='washbasin-floor';
     buildWalls();
     joinery=JOINERY.build(renderer,walls);joinery.root.position.set(-CX,0,-CZ);scene.add(joinery.root);
     cabinets=CABINETS.build(renderer);cabinets.root.position.set(-CX,0,-CZ);scene.add(cabinets.root);
+    furniture=FURNITURE.build(renderer);furniture.root.position.set(-CX,0,-CZ);scene.add(furniture.root);
     var ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xc7c4b9,roughness:1}));
     ground.rotation.x=-Math.PI/2; ground.position.y=-.27; ground.receiveShadow=true; scene.add(ground);
   }
@@ -190,7 +197,7 @@
     camera.setViewOffset(w,h,-left/2,-top/2,w,h); camera.updateProjectionMatrix();
   }
   function updateCamera() {
-    var r=28, s=Math.sin(orbit.phi);
+    var r=orbit.distance, s=Math.sin(orbit.phi);
     camera.position.set(orbit.x+r*s*Math.sin(orbit.theta),orbit.y+r*Math.cos(orbit.phi),orbit.z+r*s*Math.cos(orbit.theta));
     camera.lookAt(orbit.x,orbit.y,orbit.z); projection(); camera.updateMatrixWorld();
   }
@@ -208,7 +215,7 @@
     var v=views[key]; if(!v) return;
     if(tween) cancelAnimationFrame(tween); tween=null;
     document.querySelectorAll('[data-view]').forEach(function(b) { var on=b.dataset.view===key; b.classList.toggle('on',on); b.setAttribute('aria-pressed',String(on)); });
-    var target={x:v.x-CX,z:v.z-CZ,y:v.y,theta:v.theta,phi:v.phi,span:v.span};
+    var target={x:v.x-CX,z:v.z-CZ,y:v.y,theta:v.theta,phi:v.phi,span:v.span,distance:v.distance||28};
     if(!animate || matchMedia('(prefers-reduced-motion: reduce)').matches) { Object.assign(orbit,target); requestRender(); return; }
     var start=Object.assign({},orbit), t0=performance.now();
     function step(now) {
@@ -257,9 +264,10 @@
     canvas.addEventListener('contextmenu',function(e) {e.preventDefault();});
     canvas.addEventListener('wheel',function(e) {e.preventDefault();cancelTween();orbit.span=THREE.MathUtils.clamp(orbit.span*Math.exp(e.deltaY*.001),2.5,28);requestRender();},{passive:false});
     document.querySelectorAll('[data-view]').forEach(function(b) {b.addEventListener('click',function(){selectView(b.dataset.view,true);});});
-    document.getElementById('walls').addEventListener('click',function(){fullWalls=!fullWalls;this.textContent=fullWalls?'剖面墙高':'完整墙高';this.setAttribute('aria-pressed',String(fullWalls));buildWalls();requestRender();});
-    document.getElementById('doors').addEventListener('click',function(){doorsOpen=!doorsOpen;this.textContent=doorsOpen?'关闭房门':'打开房门';this.setAttribute('aria-pressed',String(!doorsOpen));joinery.setOpen(doorsOpen);requestRender();});
-    document.getElementById('cabinetToggle').addEventListener('click',function(){cabinets.root.visible=!cabinets.root.visible;this.textContent=cabinets.root.visible?'隐藏柜体':'显示柜体';this.setAttribute('aria-pressed',String(!cabinets.root.visible));requestRender();});
+    document.getElementById('walls').addEventListener('click',function(){fullWalls=!fullWalls;this.textContent=fullWalls?'剖面墙高':'完整墙高';this.setAttribute('aria-pressed',String(fullWalls));buildWalls();cabinets.refreshMirror(scene);requestRender();});
+    document.getElementById('doors').addEventListener('click',function(){doorsOpen=!doorsOpen;this.textContent=doorsOpen?'关闭房门':'打开房门';this.setAttribute('aria-pressed',String(!doorsOpen));joinery.setOpen(doorsOpen);cabinets.refreshMirror(scene);requestRender();});
+    document.getElementById('cabinetToggle').addEventListener('click',function(){cabinets.root.visible=!cabinets.root.visible;this.textContent=cabinets.root.visible?'隐藏柜体':'显示柜体';this.setAttribute('aria-pressed',String(!cabinets.root.visible));cabinets.refreshMirror(scene);requestRender();});
+    document.getElementById('furnitureToggle').addEventListener('click',function(){furniture.root.visible=!furniture.root.visible;this.textContent=furniture.root.visible?'隐藏家具':'显示家具';this.setAttribute('aria-pressed',String(!furniture.root.visible));cabinets.refreshMirror(scene);requestRender();});
     document.getElementById('labelToggle').addEventListener('click',function(){showLabels=!showLabels;this.textContent=showLabels?'隐藏标注':'显示标注';this.setAttribute('aria-pressed',String(!showLabels));requestRender();});
     document.getElementById('toggleInfo').addEventListener('click',function(){var hidden=document.getElementById('panel').classList.toggle('hidden');this.textContent=hidden?'显示信息':'隐藏信息';this.setAttribute('aria-expanded',String(!hidden));requestRender();});
     var dialog=document.getElementById('planDialog');
@@ -292,7 +300,7 @@
     renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     scene=new THREE.Scene();scene.background=new THREE.Color(0xdedbd2);
     camera=new THREE.OrthographicCamera(-10,10,10,-10,.1,250);
-    buildModel();lights();controls();selectView(views[location.hash.slice(1)]?location.hash.slice(1):'all',false);render();
+    buildModel();lights();cabinets.refreshMirror(scene);controls();selectView(views[location.hash.slice(1)]?location.hash.slice(1):'all',false);render();
     var loading=document.getElementById('loading'); loading.style.opacity='0';setTimeout(function(){loading.hidden=true;loading.style.display='none';},320);
   } catch(err) {
     document.getElementById('loading').textContent='三维场景未能启动，请使用支持 WebGL 的现代浏览器打开。';
