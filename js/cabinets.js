@@ -147,17 +147,34 @@
 
     var kitchen=assembly('kitchen-cabinets','厨房橱柜','厨房',6.80,0,.26);
     // Set back from the sliding-door entrance to leave a turning area.
-    var kw=2.38,kd=.58,kh=.825;
-    baseCabinet(kitchen,kw,kh,kd,M.kitchen,false,.59);
-    box(kitchen,-.012,kh,-.008,kw+.024,.033,kd+.026,M.counter);
-    box(kitchen,0,kh+.033,0,kw,.045,.018,M.counter);
-    var returnBase=part(kitchen,kw,0,kd,-Math.PI/2);
-    baseCabinet(returnBase,.895,kh,.565,M.kitchen,false);
-    box(returnBase,.018,kh,-.008,.887,.033,.59,M.counter);
+    // The tiled corner projection occupies x 8.78–9.20, z .24–.60.
+    // Cooking worktop is lower than the sink run; both stop at the wall.
+    var kw=2.38,kd=.58,lowTop=.82,highTop=.90,thickness=.033,lowWidth=1.80;
+    var cooking=part(kitchen,0,0,0);cooking.name='kitchen-cooking-base';
+    baseCabinet(cooking,lowWidth,lowTop-thickness,kd,M.kitchen,false);
+    // Shallow closed filler behind the high cabinet, outside the wall footprint.
+    var cornerFiller=part(cooking,lowWidth,0,0);
+    carcass(cornerFiller,.16,lowTop-thickness,.34,M.kitchen);
+    var worktopShape=new THREE.Shape();
+    var worktopOutline=[[-.012,-.008],[1.968,-.008],[1.968,.36],[lowWidth,.36],[lowWidth,kd+.018],[-.012,kd+.018]];
+    worktopOutline.forEach(function(p,i){if(i)worktopShape.lineTo(p[0],-p[1]);else worktopShape.moveTo(p[0],-p[1]);});
+    worktopShape.closePath();
+    var worktopGeometry=new THREE.ExtrudeGeometry(worktopShape,{depth:thickness,bevelEnabled:false});
+    worktopGeometry.rotateX(-Math.PI/2);worktopGeometry.translate(0,lowTop-thickness,0);
+    var worktop=new THREE.Mesh(worktopGeometry,M.counter);worktop.name='kitchen-low-worktop';
+    worktop.castShadow=true;worktop.receiveShadow=true;cooking.add(worktop);
+    box(cooking,0,lowTop,0,1.968,.045,.018,M.counter);
+    var returnBase=part(kitchen,kw,0,.36,-Math.PI/2);returnBase.name='kitchen-sink-base';
+    baseCabinet(returnBase,1.115,highTop-thickness,.565,M.kitchen,false);
+    var highWorktop=box(returnBase,0,highTop-thickness,-.008,1.125,thickness,.590,M.counter);
+    highWorktop.name='kitchen-high-worktop';
+    box(returnBase,0,highTop,0,1.115,.045,.018,M.counter);
+    // Stainless riser closes the visible step where the two worktops meet.
+    box(returnBase,0,lowTop,.570,.238,highTop-lowTop,.012,M.counter);
     var upperLeft=part(kitchen,0,1.59,0);upper(upperLeft,.56,1.04,.32);
     var hoodBridge=part(kitchen,.56,2.20,0);upper(hoodBridge,.72,.43,.32);
-    var upperRight=part(kitchen,1.28,1.59,0);upper(upperRight,1.10,1.04,.32);
-    var upperReturn=part(kitchen,kw,1.59,.32,-Math.PI/2);upper(upperReturn,1.155,1.04,.32);
+    var upperRight=part(kitchen,1.28,1.59,0);upper(upperRight,.68,1.04,.32);
+    var upperReturn=part(kitchen,kw,1.59,.36,-Math.PI/2);upper(upperReturn,1.115,1.04,.32);
 
     var tv=assembly('tv-console','电视柜','客餐厅',5.122,0,4.87,-Math.PI/2);
     var tw=2.10,td=.365;

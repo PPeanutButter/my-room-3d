@@ -59,6 +59,8 @@
     // Solid grey areas on the source plan denote non-load-bearing walls, not windows.
     { axis:'z', a:.24,b:3.56,p:0,t:.24 },
     { axis:'z', a:.24,b:3.44,p:9.2,t:.24,back:true },
+    // Photo: tiled projection at the inner kitchen corner; footprint is estimated.
+    { axis:'x', a:8.78,b:9.2,p:.24,t:.36,back:true,id:'kitchen-corner-wall' },
     { axis:'x', a:.24,b:2.98,p:3.56,t:.12,holes:[{a:.43,b:1.22,sill:.9,top:2.2,window:true,id:'bed2-south-window',screenSide:-1}] },
     { axis:'z', a:.24,b:3.56,p:2.86,t:.12,holes:[{a:2.68,b:3.56,sill:0,top:2.15,id:'bed2-door',door:'wood',hinge:'end',swing:1.3}] },
     { axis:'z', a:.24,b:3.56,p:5.96,t:.12,holes:[{a:.3,b:1.73,sill:0,top:2.25,id:'kitchen-door',door:'sliding'},{a:2.04,b:2.82,sill:0,top:2.1,id:'bath-door',door:'glass',swing:1.25}] },
@@ -99,6 +101,7 @@
       else uv.setXY(i,Math.abs(normal.getX(i))>.5?z:x,y);
     }
     var mesh=new THREE.Mesh(geometry,materials);mesh.position.set(xm,(lo+hi)/2,zm);
+    if(w.id) mesh.name=w.id;
     mesh.castShadow=true;mesh.receiveShadow=true;g.add(mesh);
   }
   function wallPiece(g,w,a,b,lo,hi,mat) {
