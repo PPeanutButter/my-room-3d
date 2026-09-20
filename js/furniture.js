@@ -81,7 +81,8 @@
     }
 
     // Head against the east wall, foot toward the west-side aisle.
-    var bed=assembly('master-bed','主卧双人床','主卧',7.82,5.02,-Math.PI/2),bw=1.56,bl=2.10;
+    // Reserve 50 cm beside the wardrobe and 5 cm between the bed and dresser.
+    var bed=assembly('master-bed','主卧双人床','主卧',7.82,4.777,-Math.PI/2),bw=1.86,bl=2.10;
     legs(bed,bw,bl,.18);
     rounded(bed,0,.16,0,.05,.22,bl,.022,M.frame);
     rounded(bed,bw-.05,.16,0,.05,.22,bl,.022,M.frame);
@@ -89,14 +90,14 @@
     var headboard=new THREE.Group();headboard.name='master-upholstered-headboard';bed.add(headboard);
     rounded(headboard,0,.16,0,bw,.92,.065,.028,M.frame);
     // Two padded backrests sit above the mattress, with a narrow centre seam.
-    rounded(headboard,.035,.575,.04,.738,.465,.10,.047,M.frame);
-    rounded(headboard,.787,.575,.04,.738,.465,.10,.047,M.frame);
+    rounded(headboard,.035,.575,.04,.888,.465,.10,.047,M.frame);
+    rounded(headboard,.937,.575,.04,.888,.465,.10,.047,M.frame);
     box(bed,bw/2-.025,.23,.06,.05,.05,bl-.12,M.frame);
     for(var s=0;s<13;s++) box(bed,.05,.295,.075+s*.151,bw-.10,.024,.095,M.slat);
-    rounded(bed,.03,.32,.07,1.50,.24,2.00,.032,M.mattress).name='master-mattress';
+    rounded(bed,.03,.32,.07,1.80,.24,2.00,.032,M.mattress).name='master-mattress';
     // Flat mattress represents the normal use state, rather than the packing photo.
-    pillow(bed,.10,.557,.15,.62,.12,.38,M.bedding);
-    pillow(bed,.84,.557,.15,.62,.12,.38,M.bedding);
+    pillow(bed,.12,.557,.15,.72,.12,.38,M.bedding);
+    pillow(bed,1.02,.557,.15,.72,.12,.38,M.bedding);
 
     function sofa(g,w,d,mat,seatCount) {
       legs(g,w,d,.105);

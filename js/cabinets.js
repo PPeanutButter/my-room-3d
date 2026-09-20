@@ -112,9 +112,9 @@
       // Recessed horizontal grips match the dark drawer lines in the photos.
       box(g,.018,split-.011,d-.025,w-.036,.009,.017,M.gap);
     }
-    function baseCabinet(g,w,h,d,material,drawers,blindRight) {
+    function baseCabinet(g,w,h,d,material,drawers,blindRight,openTop) {
       var kick=.075;box(g,.025,0,.025,w-.05,kick,d-.06,M.gap);
-      var body=part(g,0,kick,0);carcass(body,w,h-kick,d,material);
+      var body=part(g,0,kick,0);carcass(body,w,h-kick,d,material,openTop);
       var usable=w-(blindRight||0),n=Math.max(1,Math.round(usable/.53)),pitch=usable/n;
       if(blindRight) face(g,usable,kick,blindRight,h-kick-.009,d,material,false);
       for(var i=0;i<n;i++) {
@@ -166,8 +166,17 @@
     worktop.castShadow=true;worktop.receiveShadow=true;cooking.add(worktop);
     box(cooking,0,lowTop,0,1.968,.045,.018,M.counter);
     var returnBase=part(kitchen,kw,0,.36,-Math.PI/2);returnBase.name='kitchen-sink-base';
-    baseCabinet(returnBase,1.115,highTop-thickness,.565,M.kitchen,false);
-    var highWorktop=box(returnBase,0,highTop-thickness,-.008,1.125,thickness,.590,M.counter);
+    baseCabinet(returnBase,1.115,highTop-thickness,.565,M.kitchen,false,0,true);
+    // Share the sink mount with the fixture model so its bowl matches the opening.
+    var sinkMount={position:[9.18,0,.62],rotation:-Math.PI/2,x:.58,z:.31,width:.68,depth:.36,top:highTop};
+    var highShape=new THREE.Shape();highShape.moveTo(0,.008);highShape.lineTo(1.125,.008);
+    highShape.lineTo(1.125,-.582);highShape.lineTo(0,-.582);highShape.closePath();
+    var cutout=new THREE.Path(),sx=sinkMount.x,sz=sinkMount.z,sw=sinkMount.width/2,sd=sinkMount.depth/2;
+    cutout.moveTo(sx-sw,-sz-sd);cutout.lineTo(sx+sw,-sz-sd);cutout.lineTo(sx+sw,-sz+sd);cutout.lineTo(sx-sw,-sz+sd);cutout.closePath();
+    highShape.holes.push(cutout);
+    var highGeometry=new THREE.ExtrudeGeometry(highShape,{depth:thickness,bevelEnabled:false});
+    highGeometry.rotateX(-Math.PI/2);highGeometry.translate(0,highTop-thickness,0);
+    var highWorktop=new THREE.Mesh(highGeometry,M.counter);highWorktop.castShadow=true;highWorktop.receiveShadow=true;returnBase.add(highWorktop);
     highWorktop.name='kitchen-high-worktop';
     box(returnBase,0,highTop,0,1.115,.045,.018,M.counter);
     // Stainless riser closes the visible step where the two worktops meet.
@@ -189,12 +198,66 @@
     face(tv,1.067,.147,.517,.13,td,M.oak,true);
     face(tv,1.604,.147,.492,.158,td,M.white,true);face(tv,1.604,.311,.492,.172,td,M.white,true);
 
-    var dresser=assembly('master-dresser','主卧化妆柜','主卧',6.33,0,7.428,Math.PI);
-    box(dresser,0,.737,0,.98,.029,.43,M.oak);
-    box(dresser,.016,0,.03,.028,.737,.365,M.oak);
-    var drawers=part(dresser,.625,.055,.015);carcass(drawers,.34,.674,.40,M.oak);
-    for(var dr=0;dr<3;dr++) face(drawers,0,dr*.223,.34,.218,.40,M.white,true);
-    box(dresser,.055,.62,.012,.55,.018,.36,M.oak);
+    // Beside the bed on its window side, backed against the same east wall as the headboard.
+    var dresser=assembly('master-dresser','主卧化妆柜','主卧',7.838,0,6.687,-Math.PI/2);
+    // IMG_0212: the 50 cm desk / storage stool combination, with a rear tray and folding mirror.
+    var dresserWood=mat('梳妆台棕色木饰面',0x8d593b,.53,true);
+    var dresserPale=mat('收纳凳浅木抽屉',0xc8aa81,.61,true);
+    var dresserCream=mat('收纳凳奶白抽屉',0xe4e1d3,.55);
+    var dresserCushion=mat('收纳凳棕色软垫',0xa67b60,.88);
+    var dresserChrome=mat('化妆镜银色支架',0xc7c7bd,.23);
+    dresserChrome.metalness=1;dresserChrome.envMap=steelEnvironment.texture;
+    function softBoard(g,x,y,z,w,h,d,material,radius) {
+      var r=Math.min(radius||.005,w/3,h/3,d/3),shape=new THREE.Shape();
+      shape.moveTo(r,r);shape.lineTo(w-r,r);shape.lineTo(w-r,h-r);shape.lineTo(r,h-r);shape.closePath();
+      var geometry=new THREE.ExtrudeGeometry(shape,{depth:d-2*r,bevelEnabled:true,bevelSize:r,bevelThickness:r,bevelSegments:3});
+      var mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z+r);
+      mesh.castShadow=true;mesh.receiveShadow=true;g.add(mesh);return mesh;
+    }
+    softBoard(dresser,0,0,0,.022,.805,.43,dresserWood);
+    softBoard(dresser,.478,0,0,.022,.805,.43,dresserWood);
+    box(dresser,.022,.025,.006,.456,.703,.014,dresserWood);
+    softBoard(dresser,.022,.736,.105,.456,.024,.32,dresserWood);
+    // Shallow full-width drawer; the stool tucks into the clear space below it.
+    box(dresser,.026,.612,.09,.448,.122,.325,dresserWood);
+    softBoard(dresser,.026,.617,.414,.448,.111,.016,dresserWood);
+    box(dresser,.031,.731,.416,.438,.007,.012,dresserCream);
+    box(dresser,.022,.748,.018,.456,.016,.087,dresserWood);
+    softBoard(dresser,.015,.768,.003,.47,.037,.016,dresserWood);
+    box(dresser,.024,.764,.096,.452,.018,.012,dresserWood);
+    [.14,.31].forEach(function(x){box(dresser,x,.764,.02,.008,.025,.076,dresserWood);});
+    // Recessed power panel in the rear tray.
+    box(dresser,.335,.766,.032,.112,.005,.044,M.gap);
+    [.36,.405].forEach(function(x){box(dresser,x,.772,.043,.003,.001,.014,dresserCream);box(dresser,x+.012,.772,.043,.003,.001,.014,dresserCream);});
+
+    var stool=part(dresser,.033,0,.15);stool.name='master-dresser-storage-stool';
+    carcass(stool,.434,.398,.37,dresserWood);
+    box(stool,.023,.011,.024,.388,.373,.333,M.gap);
+    function stoolDrawer(y,h,material) {
+      var shape=new THREE.Shape();shape.moveTo(.008,y);shape.lineTo(.426,y);shape.lineTo(.426,y+h);shape.lineTo(.008,y+h);shape.closePath();
+      var hole=new THREE.Path();hole.absarc(.217,y+h-.042,.012,0,Math.PI*2,true);shape.holes.push(hole);
+      var mesh=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:.017,bevelEnabled:true,bevelSize:.001,bevelThickness:.001,bevelSegments:2,curveSegments:24}),material);
+      mesh.position.z=.366;mesh.castShadow=true;mesh.receiveShadow=true;stool.add(mesh);
+    }
+    stoolDrawer(.018,.181,dresserPale);stoolDrawer(.204,.181,dresserCream);
+    softBoard(stool,-.006,.398,-.003,.446,.043,.385,dresserCushion,.012);
+
+    function dresserRod(a,b,r) {
+      var start=new THREE.Vector3().fromArray(a),end=new THREE.Vector3().fromArray(b),axis=end.clone().sub(start);
+      var mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,axis.length(),16),dresserChrome);
+      mesh.position.copy(start).add(end).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),axis.normalize());
+      mesh.castShadow=true;dresser.add(mesh);
+    }
+    dresserRod([.36,.78,.049],[.36,.85,.049],.007);
+    dresserRod([.36,.85,.049],[.19,.89,.13],.006);
+    dresserRod([.19,.89,.13],[.25,.935,.055],.006);
+    dresserRod([.25,.935,.055],[.25,1.08,.055],.005);
+    var mirrorBack=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.014,64),dresserChrome);
+    mirrorBack.rotation.x=Math.PI/2;mirrorBack.position.set(.25,1.102,.07);dresser.add(mirrorBack);
+    var dresserMirror=new THREE.Mesh(new THREE.CircleGeometry(.130,64),new THREE.MeshBasicMaterial({color:0xdce6e9,combine:THREE.MixOperation,reflectivity:.94}));
+    dresserMirror.name='master-dresser-mirror';dresserMirror.position.set(.25,1.102,.078);dresser.add(dresserMirror);
+    var mirrorRim=new THREE.Mesh(new THREE.TorusGeometry(.136,.004,10,64),dresserChrome);
+    mirrorRim.position.set(.25,1.102,.080);dresser.add(mirrorRim);
 
     // Backed by the south wall: cabinet fronts face north into the dining area.
     var vanity=assembly('washbasin-cabinet','洗漱台与镜子','客餐厅',5.946,.27,3.545,Math.PI);
@@ -250,6 +313,10 @@
     var mirrorTarget=new THREE.WebGLCubeRenderTarget(128,{generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter});
     mirrorTarget.texture.encoding=THREE.sRGBEncoding;
     var mirrorCamera=new THREE.CubeCamera(.025,40,mirrorTarget);
+    var dresserMirrorTarget=new THREE.WebGLCubeRenderTarget(128,{generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter});
+    dresserMirrorTarget.texture.encoding=THREE.sRGBEncoding;
+    var dresserMirrorCamera=new THREE.CubeCamera(.025,40,dresserMirrorTarget);
+    dresserMirror.material.envMap=dresserMirrorTarget.texture;
     var mirrorGlow=new THREE.Mesh(mirrorOutline(.626,.746,.048),new THREE.MeshBasicMaterial({color:0xc6e5ed}));
     mirrorGlow.position.set(.335,1.29,.024);vanity.add(mirrorGlow);
     var mirror=new THREE.Mesh(mirrorOutline(.61,.73,.044),new THREE.MeshBasicMaterial({color:0xdce6e9,envMap:mirrorTarget.texture,combine:THREE.MixOperation,reflectivity:.94}));
@@ -261,6 +328,10 @@
       mirrorCamera.position.add(new THREE.Vector3(0,0,.03).transformDirection(mirror.matrixWorld).multiplyScalar(.03));
       mirror.visible=false;mirrorGlow.visible=false;
       try {mirrorCamera.update(renderer,scene);} finally {mirror.visible=true;mirrorGlow.visible=true;}
+      dresserMirror.getWorldPosition(dresserMirrorCamera.position);
+      dresserMirrorCamera.position.add(new THREE.Vector3(0,0,1).transformDirection(dresserMirror.matrixWorld).multiplyScalar(.03));
+      dresserMirror.visible=false;
+      try {dresserMirrorCamera.update(renderer,scene);} finally {dresserMirror.visible=true;}
     }
 
     root.updateMatrixWorld(true);
@@ -268,7 +339,7 @@
       var b=new THREE.Box3().setFromObject(g);
       g.userData.bounds={min:b.min.toArray(),max:b.max.toArray()};
     });
-    return {root:root,refreshMirror:refreshMirror};
+    return {root:root,refreshMirror:refreshMirror,counterMaterial:M.counter,sinkMount:sinkMount};
   }
   global.CABINETS={build:build};
 })(window);

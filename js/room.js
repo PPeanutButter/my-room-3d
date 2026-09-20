@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var H = 2.70, CX = 4.72, CZ = 4.515;
-  var scene, camera, renderer, shell, joinery, cabinets, furniture, fullWalls = true, showLabels = true, doorsOpen = true;
+  var scene, camera, renderer, shell, joinery, cabinets, furniture, appliances, fullWalls = true, showLabels = true, doorsOpen = true;
   var labelItems = [], tween = null, frame = 0;
   var canvas = document.getElementById('stage');
   var mobile = function () { return window.innerWidth <= 720; };
@@ -16,6 +16,7 @@
     living: { x:3.55, z:4.8, y:0.25, theta:-0.28, phi:0.43, span:8.1 },
     dining: { x:4.12, z:1.8, y:0.35, theta:.35, phi:.65, span:4.5 },
     kitchen: { x:7.52, z:1.1, y:0.4, theta:-0.18, phi:0.5, span:5.3 },
+    service: { x:8.55, z:2.68, y:.85, theta:-.7, phi:.65, span:3.7 },
     master: { x:6.55, z:5.55, y:0.3, theta:-0.3, phi:0.5, span:6.2 },
     bed2: { x:1.55, z:1.9, y:0.3, theta:-0.15, phi:0.45, span:5.9 },
     bath: { x:7.48, z:2.65, y:0.25, theta:-0.15, phi:0.35, span:5.2 },
@@ -173,6 +174,7 @@
     joinery=JOINERY.build(renderer,walls);joinery.root.position.set(-CX,0,-CZ);scene.add(joinery.root);
     cabinets=CABINETS.build(renderer);cabinets.root.position.set(-CX,0,-CZ);scene.add(cabinets.root);
     furniture=FURNITURE.build(renderer);furniture.root.position.set(-CX,0,-CZ);scene.add(furniture.root);
+    appliances=APPLIANCES.build(renderer,cabinets);appliances.root.position.set(-CX,0,-CZ);scene.add(appliances.root);
     var ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xc7c4b9,roughness:1}));
     ground.rotation.x=-Math.PI/2; ground.position.y=-.27; ground.receiveShadow=true; scene.add(ground);
   }
@@ -268,6 +270,7 @@
     document.getElementById('doors').addEventListener('click',function(){doorsOpen=!doorsOpen;this.textContent=doorsOpen?'关闭房门':'打开房门';this.setAttribute('aria-pressed',String(!doorsOpen));joinery.setOpen(doorsOpen);cabinets.refreshMirror(scene);requestRender();});
     document.getElementById('cabinetToggle').addEventListener('click',function(){cabinets.root.visible=!cabinets.root.visible;this.textContent=cabinets.root.visible?'隐藏柜体':'显示柜体';this.setAttribute('aria-pressed',String(!cabinets.root.visible));cabinets.refreshMirror(scene);requestRender();});
     document.getElementById('furnitureToggle').addEventListener('click',function(){furniture.root.visible=!furniture.root.visible;this.textContent=furniture.root.visible?'隐藏家具':'显示家具';this.setAttribute('aria-pressed',String(!furniture.root.visible));cabinets.refreshMirror(scene);requestRender();});
+    document.getElementById('applianceToggle').addEventListener('click',function(){appliances.root.visible=!appliances.root.visible;this.textContent=appliances.root.visible?'隐藏设备':'显示设备';this.setAttribute('aria-pressed',String(!appliances.root.visible));cabinets.refreshMirror(scene);requestRender();});
     document.getElementById('labelToggle').addEventListener('click',function(){showLabels=!showLabels;this.textContent=showLabels?'隐藏标注':'显示标注';this.setAttribute('aria-pressed',String(!showLabels));requestRender();});
     document.getElementById('toggleInfo').addEventListener('click',function(){var hidden=document.getElementById('panel').classList.toggle('hidden');this.textContent=hidden?'显示信息':'隐藏信息';this.setAttribute('aria-expanded',String(!hidden));requestRender();});
     var dialog=document.getElementById('planDialog');
