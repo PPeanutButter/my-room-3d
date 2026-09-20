@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#dedad2">
+  <title>毛坯房 · 空间原貌</title>
+  <style>
+    :root { --ink:#343733; --muted:#82867e; --paper:rgba(250,248,244,.94); --line:rgba(52,55,51,.12); --accent:#9a674d; }
+    * { box-sizing:border-box; }
+    body { margin:0; overflow:hidden; background:#dedad2; color:var(--ink); font:13px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; }
+    button,a { -webkit-tap-highlight-color:transparent; }
+    button { font:inherit; cursor:pointer; color:inherit; }
+    button:focus-visible,a:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+    #stage { display:block; width:100vw; height:100dvh; touch-action:none; cursor:grab; }
+    #stage:active { cursor:grabbing; }
+    #panel { position:fixed; top:24px; left:24px; width:266px; max-height:calc(100dvh - 100px); overflow:auto; padding:23px 21px 19px; background:var(--paper); border:1px solid rgba(255,255,255,.65); border-radius:15px; box-shadow:0 16px 50px -25px #554c3b66; backdrop-filter:blur(16px); transition:opacity .2s,transform .2s; }
+    #panel.hidden { opacity:0; transform:translateX(-16px); pointer-events:none; }
+    .eyebrow { color:var(--accent); font-size:9px; letter-spacing:.22em; font-weight:600; }
+    h1 { margin:8px 0 2px; font-size:23px; letter-spacing:.08em; font-weight:550; }
+    .subtitle { color:var(--muted); font-size:11px; margin:0; }
+    .stats { display:flex; align-items:baseline; gap:6px; margin-top:19px; }
+    .stats strong { font-size:28px; font-weight:400; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
+    .stats span { font-size:11px; color:var(--muted); }
+    .stats .layout { margin-left:auto; color:#646b60; }
+    .divider { height:1px; background:var(--line); margin:17px 0; }
+    h2 { font-size:10px; letter-spacing:.13em; font-weight:500; color:var(--muted); margin:0 0 10px; }
+    .views { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .views button { padding:7px 2px; font-size:11px; border:1px solid var(--line); border-radius:7px; background:rgba(255,255,255,.5); transition:background .15s; }
+    .views button:hover { background:#fff; }
+    .views button.on { background:#464d43; border-color:#464d43; color:#fffefa; }
+    .rooms { margin:0; }
+    .rooms div { display:flex; justify-content:space-between; padding:3px 0; font-size:11px; }
+    .rooms dt { color:#6e736b; }
+    .rooms dd { margin:0; color:#444b41; font-variant-numeric:tabular-nums; }
+    .note { font-size:10px; line-height:1.8; color:var(--muted); margin:10px 0 0; }
+    .material { display:flex; align-items:center; gap:8px; font-size:11px; color:#6e736b; }
+    .swatch { width:23px; height:23px; border-radius:50%; border:1px solid #00000010; background:radial-gradient(ellipse at 30% 20%,#c5c3bb,#9e9f98); box-shadow:inset 1px 1px 4px #ffffff55; }
+    #source { border:0; background:none; padding:0; margin-top:14px; font-size:11px; color:var(--accent); }
+    #tools { position:fixed; bottom:23px; right:24px; display:flex; gap:7px; }
+    #tools button,#toggleInfo { border:1px solid var(--line); border-radius:8px; padding:9px 13px; background:var(--paper); box-shadow:0 8px 20px -15px #554c3b99; font-size:11px; backdrop-filter:blur(12px); }
+    #tools button:hover,#toggleInfo:hover { background:#fff; }
+    #tools button[aria-pressed="true"] { color:#fff; background:#464d43; }
+    #toggleInfo { position:fixed; left:24px; bottom:23px; }
+    #hint { position:fixed; left:calc(50% + 110px); bottom:76px; transform:translateX(-50%); color:#7e8178; font-size:10px; letter-spacing:.08em; white-space:nowrap; pointer-events:none; }
+    #stamp { position:fixed; right:27px; top:24px; color:#858a80; font-size:10px; text-align:right; letter-spacing:.15em; pointer-events:none; }
+    #stamp b { display:block; font-weight:400; color:#60685b; font-size:12px; margin-bottom:2px; letter-spacing:.07em; }
+    #labels { position:fixed; inset:0; pointer-events:none; overflow:hidden; }
+    .room-label { position:absolute; top:0; left:0; text-align:center; white-space:nowrap; padding:4px 9px; border:1px solid #ffffff55; border-radius:5px; background:rgba(247,246,240,.74); box-shadow:0 2px 12px #383d3210; color:#535a4e; font-size:11px; line-height:1.45; }
+    .room-label small { display:block; font-size:9px; letter-spacing:.02em; color:#858a7e; }
+    #loading { position:fixed; inset:0; background:#dedad2; display:grid; place-content:center; text-align:center; z-index:10; color:#7f8478; font-size:12px; letter-spacing:.18em; transition:opacity .3s; }
+    #loading small { display:block; margin-top:9px; font-size:10px; letter-spacing:.06em; }
+    dialog { width:min(850px,94vw); height:min(92dvh,1000px); padding:18px; border:1px solid var(--line); border-radius:14px; background:#faf8f4; color:var(--ink); }
+    dialog::backdrop { background:#262c2580; backdrop-filter:blur(6px); }
+    .dialog-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .dialog-head button { border:1px solid var(--line); background:#fff; border-radius:6px; padding:5px 14px; }
+    dialog img { display:block; object-fit:contain; width:100%; height:calc(100% - 58px); }
+    @media(max-width:720px) {
+      #panel { top:14px; left:14px; width:calc(100% - 28px); padding:14px 16px; max-height:38dvh; }
+      h1 { font-size:19px; margin-top:3px; }
+      .eyebrow { font-size:8px; }
+      .stats,.detail,.divider,#stamp { display:none; }
+      .views { grid-template-columns:repeat(4,1fr); gap:5px; margin-top:12px; }
+      .views button { padding:5px 0; font-size:10px; }
+      .view-title { display:none; }
+      #source { margin-top:9px; font-size:10px; }
+      #tools { right:12px; bottom:16px; gap:5px; }
+      #tools button,#toggleInfo { padding:9px 9px; font-size:10px; }
+      #toggleInfo { left:12px; bottom:16px; }
+      #hint { left:50%; bottom:66px; font-size:9px; letter-spacing:.01em; }
+      .room-label { font-size:10px; padding:2px 5px; }
+      .room-label small { font-size:8px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage" aria-label="可旋转的毛坯房三维户型，支持拖动旋转和滚轮缩放"></canvas>
+  <div id="labels" aria-hidden="true"></div>
+  <aside id="panel" aria-label="户型信息与视角控制">
+    <div class="eyebrow">BARE SHELL / 01</div>
+    <h1>毛坯房 · 空间原貌</h1>
+    <p class="subtitle">水泥地面 · 素灰墙体 · 自然采光</p>
+    <div class="stats"><strong>54.98</strong><span>m²</span><span class="layout">两室一厅</span></div>
+    <div class="divider"></div>
+    <h2 class="view-title">观察视角</h2>
+    <div class="views">
+      <button data-view="all" class="on" aria-pressed="true">全屋轴测</button>
+      <button data-view="top" aria-pressed="false">户型俯视</button>
+      <button data-view="living" aria-pressed="false">客餐厅</button>
+      <button data-view="kitchen" aria-pressed="false">厨房</button>
+      <button data-view="master" aria-pressed="false">主卧</button>
+      <button data-view="bed2" aria-pressed="false">次卧</button>
+      <button data-view="bath" aria-pressed="false">卫生间</button>
+      <button data-view="balcony" aria-pressed="false">阳台</button>
+    </div>
+    <div class="detail">
+      <div class="divider"></div>
+      <h2>空间 / 原图标注面积</h2>
+      <dl class="rooms">
+        <div><dt>客餐厅</dt><dd>22.57 m²</dd></div>
+        <div><dt>主卧</dt><dd>10.25 m²</dd></div>
+        <div><dt>次卧</dt><dd>8.65 m²</dd></div>
+        <div><dt>厨房</dt><dd>4.76 m²</dd></div>
+        <div><dt>卫生间</dt><dd>2.45 m²</dd></div>
+        <div><dt>厨房小阳台</dt><dd>2.03 m²</dd></div>
+        <div><dt>阳台</dt><dd>4.27 m²</dd></div>
+      </dl>
+      <p class="note">合计为原图各空间标注面积，含阳台。<br>外轮廓约 9.44 × 9.03 m；层高暂设 2.70 m。<br>墙厚、洞口及局部尺寸按图估算。</p>
+      <div class="divider"></div>
+      <div class="material"><span class="swatch"></span>水泥原色 <span style="margin-left:auto;color:#92978d;font-size:10px">无装修 / 无陈设</span></div>
+    </div>
+    <button id="source">查看原始户型图 ↗</button>
+  </aside>
+  <div id="stamp"><b>空间留白，回到结构。</b>9.44 × 9.03 m</div>
+  <div id="hint">拖拽旋转 · 滚轮 / 双指缩放 · Shift 拖拽平移</div>
+  <button id="toggleInfo" aria-expanded="true" aria-controls="panel">隐藏信息</button>
+  <div id="tools">
+    <button id="walls" aria-pressed="false">完整墙高</button>
+    <button id="labelToggle" aria-pressed="false">隐藏标注</button>
+    <button id="shot">导出 PNG</button>
+  </div>
+  <dialog id="planDialog" aria-label="原始户型图">
+    <div class="dialog-head"><span>原始户型图</span><button id="closePlan">关闭</button></div>
+    <img src="户型图.png" alt="两室一厅原始户型图，最大宽度 9440 毫米，进深 9030 毫米">
+  </dialog>
+  <div id="loading" role="status">正在构建空间<small>BARE SHELL · CONCRETE & LIGHT</small></div>
+  <script src="three.min.js"></script>
+  <script src="js/maopei.js"></script>
+</body>
+</html>
