@@ -179,8 +179,16 @@
       });
       root.userData.doorsOpen=open;
     }
+    function setDoorOpen(id,open) {
+      var door=root.getObjectByName(id);if(!door)return;
+      moving.forEach(function(m){
+        if(!door.getObjectById(m.object.id))return;
+        var value=open?m.open:m.closed;
+        if(m.kind==='hinge')m.object.rotation.y=value;else m.object.position.x=value;
+      });
+    }
     setOpen(true);
-    return {root:root,setOpen:setOpen};
+    return {root:root,setOpen:setOpen,setDoorOpen:setDoorOpen};
   }
   global.JOINERY={build:build};
 })(window);

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#dedad2">
+  <title>Room Tour · 房屋漫游</title>
+  <style>
+    :root { color-scheme:light; --ink:#343733; --paper:rgba(250,248,244,.94); --line:#34373325; }
+    * { box-sizing:border-box; }
+    body { margin:0; overflow:hidden; background:#dedad2; color:var(--ink); font:13px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; }
+    button,select,a { font:inherit; color:inherit; -webkit-tap-highlight-color:transparent; }
+    button,select { cursor:pointer; }
+    button:focus-visible,a:focus-visible,select:focus-visible { outline:2px solid #9a674d; outline-offset:3px; }
+    #stage { display:block; width:100vw; height:100dvh; touch-action:none; outline:none; }
+    .card { background:var(--paper); border:1px solid #ffffff99; box-shadow:0 10px 35px -20px #554c3b80; backdrop-filter:blur(12px); border-radius:12px; }
+    header { position:fixed; top:20px; left:20px; padding:13px 17px; }
+    .eyebrow { font-size:9px; letter-spacing:.2em; color:#9a674d; }
+    h1 { margin:3px 0 0; font-size:19px; font-weight:500; }
+    header small { color:#7e8178; font-size:11px; }
+    nav { position:fixed; top:20px; right:20px; display:flex; gap:7px; padding:9px; align-items:center; }
+    nav button,nav a,select { border:1px solid var(--line); border-radius:7px; background:#fff8; padding:7px 10px; text-decoration:none; }
+    #lock { background:#464d43; color:#fff; }
+    #crosshair { position:fixed; left:50%; top:50%; width:5px; height:5px; border-radius:50%; background:#ffffffe6; box-shadow:0 0 2px #3338; pointer-events:none; }
+    footer { position:fixed; bottom:20px; left:20px; padding:10px 15px; font-size:11px; color:#686e63; pointer-events:none; }
+    kbd { font:inherit; font-weight:600; color:#343733; }
+    #pause { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); padding:20px 28px; text-align:center; pointer-events:none; }
+    #pause b { display:block; font-size:18px; font-weight:500; }
+    #pause small { color:#7e8178; }
+    #pause[hidden],#loading[hidden] { display:none; }
+    #loading { position:fixed; inset:0; display:grid; place-content:center; text-align:center; background:#dedad2; z-index:10; font-size:12px; letter-spacing:.15em; }
+    #loading small { margin-top:8px; color:#7e8178; }
+    #touch-controls { display:none; position:fixed; bottom:22px; left:18px; grid-template-columns:repeat(3,43px); gap:5px; }
+    #touch-controls button { height:43px; border:1px solid var(--line); border-radius:10px; background:var(--paper); touch-action:none; user-select:none; }
+    #touch-controls button:first-child { grid-column:2; }
+    #touch-controls button:nth-child(2) { grid-column:1; }
+    #touch-controls button.active { background:#464d43; color:white; }
+    .touch-hint { display:none; }
+    @media (pointer:coarse) { #touch-controls { display:grid; } .desktop-hint,#lock { display:none; } .touch-hint { display:inline; } footer { left:auto; right:16px; bottom:26px; max-width:45%; } }
+    @media(max-width:720px) { header { top:12px; left:12px; padding:9px 12px; } h1 { font-size:16px; } nav { top:109px; left:12px; right:auto; max-width:calc(100% - 24px); gap:5px; padding:6px; } nav button,nav a,select { padding:6px; font-size:11px; } footer { font-size:10px; } }
+  </style>
+</head>
+<body>
+  <canvas id="stage" tabindex="0" aria-label="房屋第一人称漫游，WASD 行走，鼠标移动转动视角"></canvas>
+  <header class="card"><div class="eyebrow">ROOM 3D / WALK THROUGH</div><h1>Room Tour · <span id="room-name">客餐厅</span></h1><small>视高 1.60 m · 自由探索</small></header>
+  <nav class="card" aria-label="漫游控制">
+    <select id="location" aria-label="前往房间">
+      <option value="start">前往房间…</option><option value="living">客厅</option><option value="dining">餐厅</option><option value="master">主卧</option><option value="bed2">次卧</option><option value="kitchen">厨房</option><option value="bath">卫生间</option><option value="service">厨房小阳台</option><option value="balcony">阳台</option>
+    </select>
+    <button id="reset">回到起点</button><button id="lock">锁定鼠标</button><a href="../index.html">返回户型 ↗</a>
+  </nav>
+  <div id="crosshair" aria-hidden="true"></div>
+  <div id="pause" class="card" hidden><b>漫游已暂停</b><small>点击画面继续</small></div>
+  <footer class="card"><span class="desktop-hint"><kbd>W A S D</kbd> 行走 · <kbd>Shift</kbd> 快走 · 鼠标悬停移动转头<br>点击画面锁定鼠标 · <kbd>Esc</kbd> 释放 / 暂停 · <kbd>R</kbd> 回到起点</span><span class="touch-hint">方向键行走<br>在画面上滑动转头</span></footer>
+  <div id="touch-controls" aria-label="行走方向"><button data-key="KeyW" aria-label="前进">↑</button><button data-key="KeyA" aria-label="向左">←</button><button data-key="KeyS" aria-label="后退">↓</button><button data-key="KeyD" aria-label="向右">→</button></div>
+  <div id="loading" role="status">正在准备漫游<small>ROOM TOUR · OAK & STONE</small></div>
+  <script src="../three.min.js"></script><script src="../js/finishes.js"></script><script src="../js/joinery.js"></script><script src="../js/cabinets.js"></script><script src="../js/furniture.js"></script><script src="../js/appliances.js"></script><script src="../js/curtains.js"></script><script src="../js/model.js"></script><script src="../js/tour-navigation.js"></script><script src="../js/tour.js"></script>
+</body>
+</html>
