@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var H = 2.70, CX = 4.72, CZ = 4.515;
-  var scene, camera, renderer, shell, fullWalls = false, showLabels = true;
+  var scene, camera, renderer, shell, joinery, fullWalls = true, showLabels = true, doorsOpen = true;
   var labelItems = [], tween = null, frame = 0;
   var canvas = document.getElementById('stage');
   var mobile = function () { return window.innerWidth <= 720; };
@@ -53,26 +53,28 @@
   function rect(x0,z0,x1,z1) { return [[x0,z0],[x1,z0],[x1,z1],[x0,z1]]; }
 
   // Openings retain their actual floor/sill heights even when walls are cut down.
-  // Every run is split into solids around the openings; no opaque door leaves.
+  // Wall solids and full-height door/window assemblies share the same openings.
   var walls = [
-    { axis:'x', a:0,b:9.44,p:0,t:.24,back:true,holes:[{a:5.05,b:5.93,sill:0,top:2.15}] },
-    { axis:'z', a:.24,b:3.56,p:0,t:.24,holes:[{a:.7,b:1.86,sill:.9,top:2.25,window:true}] },
-    { axis:'z', a:.24,b:3.44,p:9.2,t:.24,back:true,holes:[{a:.74,b:1.60,sill:1,top:2.25,window:true}] },
-    { axis:'x', a:.24,b:2.98,p:3.56,t:.12,holes:[{a:.43,b:1.22,sill:.9,top:2.2,window:true}] },
-    { axis:'z', a:.24,b:3.56,p:2.86,t:.12,holes:[{a:2.68,b:3.56,sill:0,top:2.15}] },
-    { axis:'z', a:.24,b:3.56,p:5.96,t:.12,holes:[{a:.3,b:1.73,sill:0,top:2.25},{a:2.04,b:2.82,sill:0,top:2.1}] },
+    { axis:'x', a:0,b:9.44,p:0,t:.24,back:true,holes:[{a:5.05,b:5.93,sill:0,top:2.15,id:'entry-door',door:'entry',hinge:'end',swing:1.35}] },
+    // Solid grey areas on the source plan denote non-load-bearing walls, not windows.
+    { axis:'z', a:.24,b:3.56,p:0,t:.24 },
+    { axis:'z', a:.24,b:3.44,p:9.2,t:.24,back:true },
+    { axis:'x', a:.24,b:2.98,p:3.56,t:.12,holes:[{a:.43,b:1.22,sill:.9,top:2.2,window:true,id:'bed2-south-window',screenSide:-1}] },
+    { axis:'z', a:.24,b:3.56,p:2.86,t:.12,holes:[{a:2.68,b:3.56,sill:0,top:2.15,id:'bed2-door',door:'wood',hinge:'end',swing:1.3}] },
+    { axis:'z', a:.24,b:3.56,p:5.96,t:.12,holes:[{a:.3,b:1.73,sill:0,top:2.25,id:'kitchen-door',door:'sliding'},{a:2.04,b:2.82,sill:0,top:2.1,id:'bath-door',door:'glass',swing:1.25}] },
     { axis:'x', a:6.08,b:9.2,p:1.765,t:.12,holes:[{a:7.92,b:8.73,sill:0,top:2.1}] },
-    { axis:'z', a:1.885,b:3.44,p:7.655,t:.24,holes:[{a:2.42,b:3.2,sill:1.05,top:2.15,window:true}] },
+    { axis:'z', a:1.885,b:3.44,p:7.655,t:.24,holes:[{a:2.42,b:3.2,sill:1.05,top:2.15,window:true,id:'bath-window',frost:true}] },
     { axis:'x', a:5.14,b:6.08,p:3.56,t:.12 },
-    { axis:'x', a:6.08,b:9.44,p:3.44,t:.24,holes:[{a:8.03,b:9.13,sill:.85,top:2.25,window:true}] },
+    { axis:'x', a:6.08,b:9.44,p:3.44,t:.24,holes:[{a:8.03,b:9.13,sill:.85,top:2.25,window:true,id:'service-window',screenSide:-1}] },
     { axis:'z', a:3.68,b:7.69,p:1.4,t:.24 },
-    { axis:'z', a:3.68,b:7.45,p:5.14,t:.12,holes:[{a:3.68,b:4.57,sill:0,top:2.15}] },
+    { axis:'z', a:3.68,b:7.45,p:5.14,t:.12,holes:[{a:3.68,b:4.57,sill:0,top:2.15,id:'master-door',door:'wood',swing:1.3}] },
     { axis:'z', a:3.68,b:7.69,p:7.86,t:.12,back:true },
     { axis:'x', a:1.64,b:5.14,p:7.45,t:.24,holes:[{a:1.95,b:4.2,sill:0,top:2.3}] },
-    { axis:'x', a:5.14,b:7.86,p:7.45,t:.24,holes:[{a:6.55,b:7.51,sill:.85,top:2.25,window:true}] },
-    { axis:'z', a:7.69,b:9.03,p:1.4,t:.24,balcony:true,holes:[{a:7.85,b:8.78,sill:.95,top:2.3,window:true}] },
-    { axis:'z', a:7.69,b:9.03,p:5.14,t:.12,balcony:true,holes:[{a:7.85,b:8.78,sill:.95,top:2.3,window:true}] },
-    { axis:'x', a:1.64,b:5.14,p:8.91,t:.12,balcony:true,holes:[{a:1.82,b:4.98,sill:.95,top:2.3,window:true}] }
+    { axis:'x', a:5.14,b:7.86,p:7.45,t:.24,holes:[{a:6.55,b:7.51,sill:.85,top:2.25,window:true,id:'master-window',screenSide:-1}] },
+    // Balcony finished floor is -0.018 m; sill 0.082 m gives 0.10 m above that floor.
+    { axis:'z', a:7.69,b:9.03,p:1.4,t:.24,balcony:true,holes:[{a:7.85,b:8.78,sill:.082,top:2.3,window:true,id:'balcony-west-window',screenSide:-1}] },
+    { axis:'z', a:7.69,b:9.03,p:5.14,t:.12,balcony:true,holes:[{a:7.85,b:8.78,sill:.082,top:2.3,window:true,id:'balcony-east-window',screenSide:1}] },
+    { axis:'x', a:1.64,b:5.14,p:8.91,t:.12,balcony:true,holes:[{a:1.82,b:4.98,sill:.082,top:2.3,window:true,id:'balcony-south-window',panes:4,screenSide:-1}] }
   ];
   function wallFinish(x,z) {
     var tiled=rooms.some(function(r) {
@@ -114,22 +116,6 @@
     if (w.axis==='x') return box(g,a,lo,w.p,b,hi,w.p+w.t,mat);
     return box(g,w.p,lo,a,w.p+w.t,hi,b,mat);
   }
-  function makeWindow(g,w,o,cut) {
-    var low=o.sill, high=Math.min(o.top,cut);
-    if (high-low<.15) return;
-    var inset=Object.assign({},w,{p:w.p+w.t/2-.02,t:.04}), fw=.028;
-    wallPiece(g,inset,o.a,o.b,low,low+fw,mats.frame);
-    wallPiece(g,inset,o.a,o.b,high-fw,high,mats.frame);
-    wallPiece(g,inset,o.a,o.a+fw,low,high,mats.frame);
-    wallPiece(g,inset,o.b-fw,o.b,low,high,mats.frame);
-    var n=Math.max(2,Math.round((o.b-o.a)/.8));
-    for (var i=1;i<n;i++) {
-      var a=o.a+(o.b-o.a)*i/n; wallPiece(g,inset,a-fw/2,a+fw/2,low,high,mats.frame);
-    }
-    var pane=Object.assign({},inset,{p:inset.p+.015,t:.008});
-    var glass=wallPiece(g,pane,o.a+fw,o.b-fw,low+fw,high-fw,mats.glass);
-    if(glass) { glass.castShadow=false; glass.receiveShadow=false; }
-  }
   function buildWalls() {
     if(shell) {
       shell.traverse(function(obj){if(obj.geometry&&obj.geometry!==boxGeometry)obj.geometry.dispose();});
@@ -144,7 +130,6 @@
         wallPiece(shell,w,last,o.a,0,h,mats.wall);
         wallPiece(shell,w,o.a,o.b,0,Math.min(o.sill,h),mats.wall);
         if(h>o.top) wallPiece(shell,w,o.a,o.b,o.top,h,mats.wall);
-        if(o.window) makeWindow(shell,w,o,h);
         last=o.b;
       });
       wallPiece(shell,w,last,w.b,0,h,mats.wall);
@@ -163,9 +148,7 @@
   function buildModel() {
     mats=Object.assign(FINISHES.create(renderer),{
       base:new THREE.MeshStandardMaterial({color:0x989e96,roughness:1}),
-      cut:new THREE.MeshStandardMaterial({color:0xe6e1d7,roughness:1}),
-      frame:new THREE.MeshStandardMaterial({color:0x69756f,roughness:.55,metalness:.4}),
-      glass:new THREE.MeshStandardMaterial({color:0xc7dcd7,transparent:true,opacity:.17,roughness:.22,depthWrite:false})
+      cut:new THREE.MeshStandardMaterial({color:0xe6e1d7,roughness:1})
     });
     var floors=new THREE.Group(); floors.position.set(-CX,0,-CZ); floors.name='room-floors'; scene.add(floors);
     slab(floors,outline,-.02,.23,[mats.floor,mats.base]);
@@ -178,6 +161,7 @@
       labelItems.push({el:el,point:new THREE.Vector3(r.at[0]-CX,.06,r.at[1]-CZ)});
     });
     buildWalls();
+    joinery=JOINERY.build(renderer,walls);joinery.root.position.set(-CX,0,-CZ);scene.add(joinery.root);
     var ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xc7c4b9,roughness:1}));
     ground.rotation.x=-Math.PI/2; ground.position.y=-.27; ground.receiveShadow=true; scene.add(ground);
   }
@@ -270,6 +254,7 @@
     canvas.addEventListener('wheel',function(e) {e.preventDefault();cancelTween();orbit.span=THREE.MathUtils.clamp(orbit.span*Math.exp(e.deltaY*.001),2.5,28);requestRender();},{passive:false});
     document.querySelectorAll('[data-view]').forEach(function(b) {b.addEventListener('click',function(){selectView(b.dataset.view,true);});});
     document.getElementById('walls').addEventListener('click',function(){fullWalls=!fullWalls;this.textContent=fullWalls?'剖面墙高':'完整墙高';this.setAttribute('aria-pressed',String(fullWalls));buildWalls();requestRender();});
+    document.getElementById('doors').addEventListener('click',function(){doorsOpen=!doorsOpen;this.textContent=doorsOpen?'关闭房门':'打开房门';this.setAttribute('aria-pressed',String(!doorsOpen));joinery.setOpen(doorsOpen);requestRender();});
     document.getElementById('labelToggle').addEventListener('click',function(){showLabels=!showLabels;this.textContent=showLabels?'隐藏标注':'显示标注';this.setAttribute('aria-pressed',String(!showLabels));requestRender();});
     document.getElementById('toggleInfo').addEventListener('click',function(){var hidden=document.getElementById('panel').classList.toggle('hidden');this.textContent=hidden?'显示信息':'隐藏信息';this.setAttribute('aria-expanded',String(!hidden));requestRender();});
     var dialog=document.getElementById('planDialog');

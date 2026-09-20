@@ -29,6 +29,10 @@
     .views button { padding:7px 2px; font-size:11px; border:1px solid var(--line); border-radius:7px; background:rgba(255,255,255,.5); transition:background .15s; }
     .views button:hover { background:#fff; }
     .views button.on { background:#464d43; border-color:#464d43; color:#fffefa; }
+    .joinery-controls { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px; }
+    .joinery-controls button { font-size:11px; padding:5px 13px; border:1px solid var(--line); border-radius:7px; background:rgba(255,255,255,.6); }
+    .joinery-controls button[aria-pressed="true"] { background:#464d43; color:#fff; }
+    .joinery-controls span { font-size:9px; color:var(--muted); }
     .rooms { margin:0; }
     .rooms div { display:flex; justify-content:space-between; padding:3px 0; font-size:11px; }
     .rooms dt { color:#6e736b; }
@@ -96,6 +100,7 @@
       <button data-view="bath" aria-pressed="false">卫生间</button>
       <button data-view="balcony" aria-pressed="false">阳台</button>
     </div>
+    <div class="joinery-controls"><button id="doors" aria-pressed="false">关闭房门</button><span>门窗保留完整高度</span></div>
     <div class="detail">
       <div class="divider"></div>
       <h2>空间 / 原图标注面积</h2>
@@ -113,7 +118,7 @@
       <div class="material"><span class="swatch"></span>暖白乳胶漆 <span style="margin-left:auto;color:#92978d;font-size:10px">客厅 / 卧室</span></div>
       <div class="material"><span class="swatch wood"></span>浅橡木地板 <span style="margin-left:auto;color:#92978d;font-size:10px">主卧 / 次卧</span></div>
       <div class="material"><span class="swatch stone"></span>米灰与浅灰石纹砖</div>
-      <p class="note">颜色与纹理参考实拍照片，保留空房状态。</p>
+      <p class="note">浅木房门 · 黑灰毛玻璃 · 外窗纱窗<br>阳台落地窗下沿离地 10 cm，客厅至阳台无门。</p>
     </div>
     <button id="source">查看原始户型图 ↗</button>
   </aside>
@@ -121,7 +126,7 @@
   <div id="hint">拖拽旋转 · 滚轮 / 双指缩放 · Shift 拖拽平移</div>
   <button id="toggleInfo" aria-expanded="true" aria-controls="panel">隐藏信息</button>
   <div id="tools">
-    <button id="walls" aria-pressed="false">完整墙高</button>
+    <button id="walls" aria-pressed="true">剖面墙高</button>
     <button id="labelToggle" aria-pressed="false">隐藏标注</button>
     <button id="shot">导出 PNG</button>
   </div>
@@ -132,6 +137,7 @@
   <div id="loading" role="status">正在构建空间<small>ROOM 3D · OAK & STONE</small></div>
   <script src="three.min.js"></script>
   <script src="js/finishes.js"></script>
+  <script src="js/joinery.js"></script>
   <script src="js/room.js"></script>
 </body>
 </html>
