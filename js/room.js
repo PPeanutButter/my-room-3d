@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var H = 2.70, CX = 4.72, CZ = 4.515;
-  var scene, camera, renderer, shell, joinery, fullWalls = true, showLabels = true, doorsOpen = true;
+  var scene, camera, renderer, shell, joinery, cabinets, fullWalls = true, showLabels = true, doorsOpen = true;
   var labelItems = [], tween = null, frame = 0;
   var canvas = document.getElementById('stage');
   var mobile = function () { return window.innerWidth <= 720; };
@@ -162,6 +162,7 @@
     });
     buildWalls();
     joinery=JOINERY.build(renderer,walls);joinery.root.position.set(-CX,0,-CZ);scene.add(joinery.root);
+    cabinets=CABINETS.build(renderer);cabinets.root.position.set(-CX,0,-CZ);scene.add(cabinets.root);
     var ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xc7c4b9,roughness:1}));
     ground.rotation.x=-Math.PI/2; ground.position.y=-.27; ground.receiveShadow=true; scene.add(ground);
   }
@@ -255,6 +256,7 @@
     document.querySelectorAll('[data-view]').forEach(function(b) {b.addEventListener('click',function(){selectView(b.dataset.view,true);});});
     document.getElementById('walls').addEventListener('click',function(){fullWalls=!fullWalls;this.textContent=fullWalls?'剖面墙高':'完整墙高';this.setAttribute('aria-pressed',String(fullWalls));buildWalls();requestRender();});
     document.getElementById('doors').addEventListener('click',function(){doorsOpen=!doorsOpen;this.textContent=doorsOpen?'关闭房门':'打开房门';this.setAttribute('aria-pressed',String(!doorsOpen));joinery.setOpen(doorsOpen);requestRender();});
+    document.getElementById('cabinetToggle').addEventListener('click',function(){cabinets.root.visible=!cabinets.root.visible;this.textContent=cabinets.root.visible?'隐藏柜体':'显示柜体';this.setAttribute('aria-pressed',String(!cabinets.root.visible));requestRender();});
     document.getElementById('labelToggle').addEventListener('click',function(){showLabels=!showLabels;this.textContent=showLabels?'隐藏标注':'显示标注';this.setAttribute('aria-pressed',String(!showLabels));requestRender();});
     document.getElementById('toggleInfo').addEventListener('click',function(){var hidden=document.getElementById('panel').classList.toggle('hidden');this.textContent=hidden?'显示信息':'隐藏信息';this.setAttribute('aria-expanded',String(!hidden));requestRender();});
     var dialog=document.getElementById('planDialog');
