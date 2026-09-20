@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var H = 2.70, CX = 4.72, CZ = 4.515;
-  var scene, camera, renderer, shell, joinery, cabinets, furniture, appliances, fullWalls = true, showLabels = true, doorsOpen = true;
+  var scene, camera, renderer, shell, joinery, cabinets, furniture, appliances, curtains, fullWalls = true, showLabels = true, doorsOpen = true;
   var labelItems = [], tween = null, frame = 0;
   var canvas = document.getElementById('stage');
   var mobile = function () { return window.innerWidth <= 720; };
@@ -175,6 +175,7 @@
     cabinets=CABINETS.build(renderer);cabinets.root.position.set(-CX,0,-CZ);scene.add(cabinets.root);
     furniture=FURNITURE.build(renderer);furniture.root.position.set(-CX,0,-CZ);scene.add(furniture.root);
     appliances=APPLIANCES.build(renderer,cabinets);appliances.root.position.set(-CX,0,-CZ);scene.add(appliances.root);
+    curtains=CURTAINS.build(renderer);curtains.root.position.set(-CX,0,-CZ);scene.add(curtains.root);
     var ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xc7c4b9,roughness:1}));
     ground.rotation.x=-Math.PI/2; ground.position.y=-.27; ground.receiveShadow=true; scene.add(ground);
   }
@@ -271,6 +272,7 @@
     document.getElementById('cabinetToggle').addEventListener('click',function(){cabinets.root.visible=!cabinets.root.visible;this.textContent=cabinets.root.visible?'隐藏柜体':'显示柜体';this.setAttribute('aria-pressed',String(!cabinets.root.visible));cabinets.refreshMirror(scene);requestRender();});
     document.getElementById('furnitureToggle').addEventListener('click',function(){furniture.root.visible=!furniture.root.visible;this.textContent=furniture.root.visible?'隐藏家具':'显示家具';this.setAttribute('aria-pressed',String(!furniture.root.visible));cabinets.refreshMirror(scene);requestRender();});
     document.getElementById('applianceToggle').addEventListener('click',function(){appliances.root.visible=!appliances.root.visible;this.textContent=appliances.root.visible?'隐藏设备':'显示设备';this.setAttribute('aria-pressed',String(!appliances.root.visible));cabinets.refreshMirror(scene);requestRender();});
+    document.getElementById('curtainToggle').addEventListener('click',function(){curtains.root.visible=!curtains.root.visible;this.textContent=curtains.root.visible?'隐藏窗帘':'显示窗帘';this.setAttribute('aria-pressed',String(!curtains.root.visible));cabinets.refreshMirror(scene);requestRender();});
     document.getElementById('labelToggle').addEventListener('click',function(){showLabels=!showLabels;this.textContent=showLabels?'隐藏标注':'显示标注';this.setAttribute('aria-pressed',String(!showLabels));requestRender();});
     document.getElementById('toggleInfo').addEventListener('click',function(){var hidden=document.getElementById('panel').classList.toggle('hidden');this.textContent=hidden?'显示信息':'隐藏信息';this.setAttribute('aria-expanded',String(!hidden));requestRender();});
     var dialog=document.getElementById('planDialog');
