@@ -25,36 +25,16 @@
   // labels below retain the source areas, rather than claiming surveyed areas.
   var rooms = [
     { name:'客餐厅', area:'22.57', at:[3.9,4.85], poly:[[2.98,.24],[5.96,.24],[5.96,3.56],[5.14,3.56],[5.14,7.45],[1.64,7.45],[1.64,3.68],[2.98,3.68]] },
-    { name:'次卧', area:'8.65', at:[1.55,1.95], rect:[.24,.24,2.86,3.56] },
-    { name:'厨房', area:'4.76', at:[7.58,1.03], rect:[6.08,.24,9.2,1.765] },
-    { name:'卫生间', area:'2.45', at:[6.85,2.72], rect:[6.08,1.885,7.655,3.44], wet:true },
-    { name:'厨房小阳台', area:'2.03', at:[8.55,2.72], rect:[7.895,1.885,9.2,3.44], wet:true },
-    { name:'主卧', area:'10.25', at:[6.55,5.6], rect:[5.26,3.68,7.86,7.45] },
-    { name:'阳台', area:'4.27', at:[3.39,8.32], rect:[1.64,7.69,5.14,8.91], wet:true }
+    { name:'次卧', area:'8.65', at:[1.55,1.95], rect:[.24,.24,2.86,3.56], finish:'wood' },
+    { name:'厨房', area:'4.76', at:[7.58,1.03], rect:[6.08,.24,9.2,1.765], tiledWalls:true },
+    { name:'卫生间', area:'2.45', at:[6.85,2.72], rect:[6.08,1.885,7.655,3.44], wet:true, finish:'bath', tiledWalls:true },
+    { name:'厨房小阳台', area:'2.03', at:[8.55,2.72], rect:[7.895,1.885,9.2,3.44], wet:true, tiledWalls:true },
+    { name:'主卧', area:'10.25', at:[6.55,5.6], rect:[5.26,3.68,7.86,7.45], finish:'wood' },
+    { name:'阳台', area:'4.27', at:[3.39,8.32], rect:[1.64,7.69,5.14,8.91], wet:true, finish:'balcony' }
   ];
   var outline = [[0,0],[9.44,0],[9.44,3.68],[7.98,3.68],[7.98,7.69],[5.26,7.69],[5.26,9.03],[1.4,9.03],[1.4,3.68],[0,3.68]];
   var mats, boxGeometry = new THREE.BoxGeometry(1,1,1);
 
-  function rng(seed) {
-    return function () { seed = (Math.imul(1664525, seed) + 1013904223) | 0; return (seed >>> 0) / 4294967296; };
-  }
-  function concreteTexture() {
-    var c = document.createElement('canvas'); c.width = c.height = 512;
-    var ctx = c.getContext('2d'), data = ctx.createImageData(512,512), random = rng(137);
-    for (var y=0; y<512; y++) for (var x=0; x<512; x++) {
-      var i = (y*512+x)*4;
-      var v = 178 + (random()-.5)*17 + 3*Math.sin(x*.032)*Math.cos(y*.049) + 2*Math.sin(y*.019+x*.013);
-      data.data[i]=v+3; data.data[i+1]=v+3; data.data[i+2]=v; data.data[i+3]=255;
-    }
-    ctx.putImageData(data,0,0);
-    for (var j=0; j<1600; j++) {
-      ctx.fillStyle = 'rgba(70,73,65,' + (.025+random()*.06) + ')';
-      ctx.beginPath(); ctx.ellipse(random()*512,random()*512,.3+random()*.9,.2+random()*.6,0,0,Math.PI*2); ctx.fill();
-    }
-    var t = new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping;
-    t.encoding=THREE.sRGBEncoding; t.anisotropy=renderer.capabilities.getMaxAnisotropy();
-    return t;
-  }
   function box(g,x0,y0,z0,x1,y1,z1,mat) {
     if (x1-x0<.001 || y1-y0<.001 || z1-z0<.001) return;
     var m = new THREE.Mesh(boxGeometry,mat);
@@ -94,7 +74,43 @@
     { axis:'z', a:7.69,b:9.03,p:5.14,t:.12,balcony:true,holes:[{a:7.85,b:8.78,sill:.95,top:2.3,window:true}] },
     { axis:'x', a:1.64,b:5.14,p:8.91,t:.12,balcony:true,holes:[{a:1.82,b:4.98,sill:.95,top:2.3,window:true}] }
   ];
+  function wallFinish(x,z) {
+    var tiled=rooms.some(function(r) {
+      if(!r.tiledWalls) return false;
+      var a=r.rect;return x>a[0]-.025&&x<a[2]+.025&&z>a[1]-.025&&z<a[3]+.025;
+    });
+    return tiled?mats.wallTile:mats.wall;
+  }
+  function wallSolid(g,w,a,b,lo,hi) {
+    if(b-a<.001||hi-lo<.001) return;
+    var horizontal=w.axis==='x',x0=horizontal?a:w.p,x1=horizontal?b:w.p+w.t;
+    var z0=horizontal?w.p:a,z1=horizontal?w.p+w.t:b;
+    var xm=(x0+x1)/2,zm=(z0+z1)/2;
+    // Box face order: +x, -x, +y, -y, +z, -z. Only room-facing surfaces get tiles.
+    var materials=[wallFinish(x1+.01,zm),wallFinish(x0-.01,zm),mats.cut,mats.wall,wallFinish(xm,z1+.01),wallFinish(xm,z0-.01)];
+    var geometry=new THREE.BoxGeometry(x1-x0,hi-lo,z1-z0);
+    var pos=geometry.attributes.position,normal=geometry.attributes.normal,uv=geometry.attributes.uv;
+    for(var i=0;i<pos.count;i++) {
+      var x=pos.getX(i)+xm,y=pos.getY(i)+(lo+hi)/2,z=pos.getZ(i)+zm;
+      // World-sized UVs avoid stretched grout at doors, windows and wall splits.
+      if(Math.abs(normal.getY(i))>.5) uv.setXY(i,x,-z);
+      else uv.setXY(i,Math.abs(normal.getX(i))>.5?z:x,y);
+    }
+    var mesh=new THREE.Mesh(geometry,materials);mesh.position.set(xm,(lo+hi)/2,zm);
+    mesh.castShadow=true;mesh.receiveShadow=true;g.add(mesh);
+  }
   function wallPiece(g,w,a,b,lo,hi,mat) {
+    if(mat===mats.wall) {
+      var cuts=[a,b];
+      rooms.forEach(function(r) {
+        if(!r.tiledWalls) return;
+        var indexes=w.axis==='x'?[0,2]:[1,3];
+        indexes.forEach(function(i) {var cut=r.rect[i];if(cut>a+.001&&cut<b-.001) cuts.push(cut);});
+      });
+      cuts.sort(function(p,q){return p-q;});
+      for(var i=0;i<cuts.length-1;i++) wallSolid(g,w,cuts[i],cuts[i+1],lo,hi);
+      return;
+    }
     if (w.axis==='x') return box(g,a,lo,w.p,b,hi,w.p+w.t,mat);
     return box(g,w.p,lo,a,w.p+w.t,hi,b,mat);
   }
@@ -115,7 +131,10 @@
     if(glass) { glass.castShadow=false; glass.receiveShadow=false; }
   }
   function buildWalls() {
-    if(shell) scene.remove(shell);
+    if(shell) {
+      shell.traverse(function(obj){if(obj.geometry&&obj.geometry!==boxGeometry)obj.geometry.dispose();});
+      scene.remove(shell);
+    }
     shell=new THREE.Group(); shell.name='room-walls'; shell.position.set(-CX,0,-CZ); scene.add(shell);
     walls.forEach(function(w) {
       var h=fullWalls?H:(w.back?H:(w.balcony?.98:1.03));
@@ -142,21 +161,17 @@
     });
   }
   function buildModel() {
-    var tex=concreteTexture(), floorTex=tex.clone(); floorTex.needsUpdate=true; floorTex.repeat.set(.58,.58);
-    mats={
-      wall:new THREE.MeshStandardMaterial({color:0xbcbeb7,map:tex,bumpMap:tex,bumpScale:.014,roughness:.97}),
-      floor:new THREE.MeshStandardMaterial({color:0x959b92,map:floorTex,bumpMap:floorTex,bumpScale:.016,roughness:1}),
-      wet:new THREE.MeshStandardMaterial({color:0x878f86,map:floorTex,bumpMap:floorTex,bumpScale:.016,roughness:1}),
+    mats=Object.assign(FINISHES.create(renderer),{
       base:new THREE.MeshStandardMaterial({color:0x989e96,roughness:1}),
-      cut:new THREE.MeshStandardMaterial({color:0xc5c6bd,roughness:1}),
+      cut:new THREE.MeshStandardMaterial({color:0xe6e1d7,roughness:1}),
       frame:new THREE.MeshStandardMaterial({color:0x69756f,roughness:.55,metalness:.4}),
       glass:new THREE.MeshStandardMaterial({color:0xc7dcd7,transparent:true,opacity:.17,roughness:.22,depthWrite:false})
-    };
+    });
     var floors=new THREE.Group(); floors.position.set(-CX,0,-CZ); floors.name='room-floors'; scene.add(floors);
-    slab(floors,outline,-.02,.23,mats.base);
+    slab(floors,outline,-.02,.23,[mats.floor,mats.base]);
     rooms.forEach(function(r) {
       var p=r.poly||rect.apply(null,r.rect);
-      slab(floors,p,r.wet?-.018:0,.025,r.wet?mats.wet:mats.floor);
+      slab(floors,p,r.wet?-.018:0,.025,mats[r.finish||'floor']);
       var el=document.createElement('div'); el.className='room-label';
       el.innerHTML=r.name+'<small>'+r.area+' m²</small>';
       document.getElementById('labels').appendChild(el);
