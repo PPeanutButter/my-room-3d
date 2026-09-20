@@ -1,10 +1,10 @@
 # 房屋 3D
 
-`index.html` 是户型入口，`roomtour/index.html` 是漫游入口。`roomtour/` 仅保留一个 HTML 入口，全部脚本和模型资源共用根目录的 `js/`、`three.min.js` 等文件，可离线使用，不需要安装依赖。
+当前是 `roomtour` 分支，根目录的 `index.html` 直接打开第一人称漫游。户型总览位于 `main` 分支，各分支的入口都在根目录，不再使用子目录区分。
 
-部署 GitHub Pages 时发布包含 `index.html`、`roomtour/`、`js/`、`three.min.js` 和 `户型图.png` 的整个站点目录。访问 `/roomtour/` 进入漫游；资源采用相对路径，也兼容 `/仓库名/roomtour/`，不能只上传 `roomtour/` 一个文件夹。
+部署 GitHub Pages：选择 `roomtour` 分支和 `/ (root)`。资源使用相对路径，兼容仓库站点的 `/仓库名/` 前缀；无需安装依赖或构建。若部署户型版，改选 `main` 分支即可。
 
-第一人称漫游入口为 `roomtour/index.html`，也可从户型页点击「进入 Room Tour」。两页复用 `js/model.js` 构建同一套墙地面、门窗、柜体、家具、家电与窗帘；漫游视高为 1.60 m，使用完整墙高并补上室内顶面。
+两分支的模型均来自 `js/model.js`，本次分支拆分的墙地面、门窗、柜体、家具、家电与窗帘完全一致。后续模型更新需通过 Git 同步到另一分支。漫游视高为 1.60 m，使用完整墙高并补上室内顶面。
 
 - 起点位于入户门内侧，朝向客餐厅。`W / A / S / D` 前后左右行走，`Shift` 快走，`R` 或「回到起点」返回入户门处。
 - 鼠标在画面上悬停移动即可转头，无需按住鼠标；点击画面或「锁定鼠标」可连续转向，`Esc` 释放鼠标并暂停。暂停后点击画面继续。
@@ -89,11 +89,8 @@
 
 卧室及客厅杆高暂估 2.56 m，帘底离地约 4 cm；阳台轨高约 2.58 m。帘布使用程序织纹与起伏曲面，纱帘透光显示。可用「隐藏窗帘 / 显示窗帘」独立控制帘布及杆轨，镜面反射随之更新；切换剖面墙高时保留完整帘高。
 
-- 拖拽旋转，滚轮或双指缩放，Shift / 鼠标右键拖拽平移。
-- 默认显示完整墙高，可切换为剖面墙高；支持全屋、俯视及各房间视角。
-- 支持隐藏标注、查看原图和导出当前视角 PNG。
-- `index.html#top` 可直接打开俯视图。
+`main` 分支提供可旋转的户型总览、墙高与显隐切换、原图查看和 PNG 导出；这些功能在该分支的 `index.html` 中使用。
 
 原图最大宽度 9.44 m，进深 9.03 m。优先使用图中标注尺寸搭建；层高暂设 2.70 m，未标注的墙厚和洞口尺寸按图估算。图中的局部尺寸与面积不完全一致，页面面积保留原图标注（合计 54.98 m²，含两个阳台），不是模型实测面积。俯视与剖面均用于空间理解，不作为施工图。
 
-文件：`index.html`（户型入口）、`roomtour/index.html`（漫游入口）、`js/model.js`（共享场景）、`js/room.js`（户型视角与交互）、`js/tour.js`（第一人称摄像头与控制）、`js/tour-navigation.js`（行走与碰撞）、`js/finishes.js`（墙地面材质）、`js/joinery.js`（门窗构件与开合）、`js/cabinets.js`（柜体与洗漱台）、`js/furniture.js`（床、沙发与餐桌椅）、`js/appliances.js`（家电与卫浴设备）、`js/curtains.js`（双层窗帘与杆轨）、`three.min.js`（本地依赖）、`户型图.png`（原图）。
+文件：`index.html`（漫游入口）、`js/model.js`（场景）、`js/tour.js`（第一人称摄像头与控制）、`js/tour-navigation.js`（行走与碰撞）、`js/finishes.js`（墙地面材质）、`js/joinery.js`（门窗）、`js/cabinets.js`（柜体与洗漱台）、`js/furniture.js`（活动家具）、`js/appliances.js`（家电与卫浴）、`js/curtains.js`（窗帘与杆轨）、`three.min.js`（本地依赖）、`户型图.png`（模型参考图）。
