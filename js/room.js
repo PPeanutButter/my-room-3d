@@ -1,4 +1,4 @@
-/* Standalone bare-shell model. Plan coordinates are metres: x → right, z → down.
+/* Standalone 3D room model. Plan coordinates are metres: x → right, z → down.
  * Source: 户型图.png. Height and unlabelled wall/opening dimensions are estimates.
  * Existing furnished apartment scripts are deliberately not dependencies.
  */
@@ -116,7 +116,7 @@
   }
   function buildWalls() {
     if(shell) scene.remove(shell);
-    shell=new THREE.Group(); shell.name='bare-shell-walls'; shell.position.set(-CX,0,-CZ); scene.add(shell);
+    shell=new THREE.Group(); shell.name='room-walls'; shell.position.set(-CX,0,-CZ); scene.add(shell);
     walls.forEach(function(w) {
       var h=fullWalls?H:(w.back?H:(w.balcony?.98:1.03));
       if(w.balcony) h=fullWalls?2.4:.98;
@@ -152,7 +152,7 @@
       frame:new THREE.MeshStandardMaterial({color:0x69756f,roughness:.55,metalness:.4}),
       glass:new THREE.MeshStandardMaterial({color:0xc7dcd7,transparent:true,opacity:.17,roughness:.22,depthWrite:false})
     };
-    var floors=new THREE.Group(); floors.position.set(-CX,0,-CZ); floors.name='bare-shell-floors'; scene.add(floors);
+    var floors=new THREE.Group(); floors.position.set(-CX,0,-CZ); floors.name='room-floors'; scene.add(floors);
     slab(floors,outline,-.02,.23,mats.base);
     rooms.forEach(function(r) {
       var p=r.poly||rect.apply(null,r.rect);
@@ -275,7 +275,7 @@
           ctx.fillStyle='#858a7e';ctx.font='10px sans-serif';ctx.fillText(item.el.querySelector('small').textContent,x,y+12);
         });
       }
-      output.toBlob(function(blob){if(!blob)return;var a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download='毛坯房_'+Date.now()+'.png';a.click();setTimeout(function(){URL.revokeObjectURL(url);},2000);},'image/png');
+      output.toBlob(function(blob){if(!blob)return;var a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download='房屋3D_'+Date.now()+'.png';a.click();setTimeout(function(){URL.revokeObjectURL(url);},2000);},'image/png');
     });
     window.addEventListener('resize',function(){renderer.setSize(innerWidth,innerHeight,false);requestRender();});
     window.addEventListener('hashchange',function(){selectView(location.hash.slice(1),true);});

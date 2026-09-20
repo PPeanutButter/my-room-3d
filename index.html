@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#dedad2">
-  <title>毛坯房 · 空间原貌</title>
+  <title>房屋 3D</title>
   <style>
     :root { --ink:#343733; --muted:#82867e; --paper:rgba(250,248,244,.94); --line:rgba(52,55,51,.12); --accent:#9a674d; }
     * { box-sizing:border-box; }
@@ -74,11 +74,11 @@
   </style>
 </head>
 <body>
-  <canvas id="stage" aria-label="可旋转的毛坯房三维户型，支持拖动旋转和滚轮缩放"></canvas>
+  <canvas id="stage" aria-label="可旋转的房屋三维户型，支持拖动旋转和滚轮缩放"></canvas>
   <div id="labels" aria-hidden="true"></div>
   <aside id="panel" aria-label="户型信息与视角控制">
-    <div class="eyebrow">BARE SHELL / 01</div>
-    <h1>毛坯房 · 空间原貌</h1>
+    <div class="eyebrow">ROOM 3D / 01</div>
+    <h1>房屋 3D</h1>
     <p class="subtitle">水泥地面 · 素灰墙体 · 自然采光</p>
     <div class="stats"><strong>54.98</strong><span>m²</span><span class="layout">两室一厅</span></div>
     <div class="divider"></div>
@@ -123,8 +123,8 @@
     <div class="dialog-head"><span>原始户型图</span><button id="closePlan">关闭</button></div>
     <img src="户型图.png" alt="两室一厅原始户型图，最大宽度 9440 毫米，进深 9030 毫米">
   </dialog>
-  <div id="loading" role="status">正在构建空间<small>BARE SHELL · CONCRETE & LIGHT</small></div>
+  <div id="loading" role="status">正在构建空间<small>ROOM 3D · CONCRETE & LIGHT</small></div>
   <script src="three.min.js"></script>
-  <script src="js/maopei.js"></script>
+  <script src="js/room.js"></script>
 </body>
 </html>
